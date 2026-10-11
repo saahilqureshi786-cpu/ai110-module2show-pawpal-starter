@@ -72,9 +72,64 @@ def test_sorting_correctness():
     ]
 
 
+def test_priority_sorting():
+    owner = Owner("Saahil")
+
+    dog = Pet("Biscuit", "Dog")
+    cat = Pet("Milo", "Cat")
+
+    owner.add_pet(dog)
+    owner.add_pet(cat)
+
+    today = date(2026, 10, 11)
+
+    dog.add_task(
+        Task(
+            "Walk",
+            "07:00",
+            priority="low",
+            due_date=today,
+        )
+    )
+
+    cat.add_task(
+        Task(
+            "Medication",
+            "10:00",
+            priority="high",
+            due_date=today,
+        )
+    )
+
+    dog.add_task(
+        Task(
+            "Breakfast",
+            "08:00",
+            priority="medium",
+            due_date=today,
+        )
+    )
+
+    scheduler = Scheduler(owner)
+
+    sorted_tasks = scheduler.sort_by_priority()
+
+    priorities = [
+        task.priority
+        for pet, task in sorted_tasks
+    ]
+
+    assert priorities == [
+        "high",
+        "medium",
+        "low",
+    ]
+
+
 def test_daily_recurrence():
     owner = Owner("Saahil")
     pet = Pet("Biscuit", "Dog")
+
     owner.add_pet(pet)
 
     original_date = date(2026, 10, 11)
@@ -96,10 +151,13 @@ def test_daily_recurrence():
     )
 
     assert task.completed is True
+
     assert next_task is not None
+
     assert next_task.due_date == (
         original_date + timedelta(days=1)
     )
+
     assert next_task.description == task.description
     assert next_task.completed is False
 

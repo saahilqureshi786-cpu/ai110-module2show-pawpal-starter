@@ -69,6 +69,26 @@ class Scheduler:
             ),
         )
 
+    def sort_by_priority(self):
+        """Return tasks sorted by priority, then date and time."""
+        priority_order = {
+            "high": 0,
+            "medium": 1,
+            "low": 2,
+        }
+
+        return sorted(
+            self.owner.get_all_tasks(),
+            key=lambda item: (
+                priority_order.get(
+                    item[1].priority.lower(),
+                    3,
+                ),
+                item[1].due_date,
+                item[1].time,
+            ),
+        )
+
     def filter_tasks(self, pet_name=None, completed=None):
         """Filter tasks by pet name or completion status."""
         tasks = self.owner.get_all_tasks()
@@ -117,8 +137,10 @@ class Scheduler:
 
         if frequency == "daily":
             next_date = task.due_date + timedelta(days=1)
+
         elif frequency == "weekly":
             next_date = task.due_date + timedelta(days=7)
+
         else:
             return None
 
@@ -132,4 +154,5 @@ class Scheduler:
         )
 
         pet.add_task(next_task)
+
         return next_task

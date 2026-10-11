@@ -18,7 +18,7 @@ biscuit.add_task(
         "Morning walk",
         "08:00",
         "daily",
-        "high",
+        "medium",
         due_date=today,
     )
 )
@@ -38,7 +38,17 @@ milo.add_task(
         "Medication",
         "10:00",
         "daily",
-        "medium",
+        "high",
+        due_date=today,
+    )
+)
+
+milo.add_task(
+    Task(
+        "Play time",
+        "07:30",
+        "once",
+        "low",
         due_date=today,
     )
 )
@@ -56,14 +66,26 @@ milo.add_task(
 scheduler = Scheduler(owner)
 
 
-print("Today's Schedule")
-print("----------------")
+print("Today's Schedule - Time Order")
+print("-----------------------------")
 
 for pet, task in scheduler.sort_by_time():
     if task.due_date == today:
         print(
             f"{task.time} — {pet.name}: "
             f"{task.description} [{task.priority}]"
+        )
+
+
+print("\nPriority Schedule")
+print("-----------------")
+
+for pet, task in scheduler.sort_by_priority():
+    if task.due_date == today:
+        print(
+            f"[{task.priority.upper()}] "
+            f"{task.time} — {pet.name}: "
+            f"{task.description}"
         )
 
 
