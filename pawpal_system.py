@@ -1,3 +1,4 @@
+import json
 from dataclasses import dataclass, field
 from datetime import date, timedelta
 
@@ -49,6 +50,69 @@ class Owner:
                 all_tasks.append((pet, task))
 
         return all_tasks
+
+    def save_to_json(self, file_path="data.json"):
+        """Save the owner, pets, and tasks to JSON."""
+        data = {
+            "name": self.name,
+            "pets": [],
+        }
+
+        for pet in self.pets:
+            pet_data = {
+                "name": pet.name,
+                "species": pet.species,
+                "tasks": [],
+            }
+
+            for task in pet.tasks:
+                pet_data["tasks"].append(
+                    {
+                        "description": task.description,
+                        "time": task.time,
+                        "frequency": task.frequency,
+                        "priority": task.priority,
+                        "completed": task.completed,
+                        "due_date": task.due_date.isoformat(),
+                    }
+                )
+
+            data["pets"].append(pet_data)
+
+        with open(file_path, "w", encoding="utf-8") as file:
+            json.dump(data, file, indent=2)
+
+    @classmethod
+    def load_from_json(cls, file_path="data.json"):
+        """Load an owner, pets, and tasks from JSON."""
+        with open(file_path, "r", encoding="utf-8") as file:
+            data = json.load(file)
+
+        owner = cls(data["name"])
+
+        for pet_data in data.get("pets", []):
+            pet = Pet(
+                name=pet_data["name"],
+                species=pet_data["species"],
+            )
+
+            for task_data in pet_data.get("tasks", []):
+                task = Task(
+                    description=task_data["description"],
+                    time=task_data["time"],
+                    frequency=task_data["frequency"],
+                    priority=task_data["priority"],
+                    completed=task_data["completed"],
+                    due_date=date.fromisoformat(
+                        task_data["due_date"]
+                    ),
+                )
+
+                pet.add_task(task)
+
+            owner.add_pet(pet)
+
+        return owner
 
 
 class Scheduler:
