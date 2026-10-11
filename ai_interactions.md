@@ -2,342 +2,362 @@
 
 ## How I Used AI
 
-I used ChatGPT as an AI coding assistant throughout the PawPal+ project.
+I used ChatGPT and an AI coding Agent as engineering assistants throughout the PawPal+ project.
 
-The main areas where AI assisted were:
+AI assisted with:
 
 - OOP architecture planning
 - UML design
 - Python class scaffolding
-- Scheduler algorithm development
+- Scheduling algorithm development
 - Debugging
 - Automated test generation
 - Streamlit integration
-- Data persistence
-- README and reflection documentation
+- JSON persistence
+- Advanced scheduling
+- Documentation
 
-I reviewed and tested generated suggestions instead of assuming they were correct.
+I reviewed and tested generated suggestions rather than assuming they were correct.
 
 ---
 
 ## System Design
 
-### Prompt / Request
+### Task
 
-I asked AI to help design PawPal+ using four main classes:
+Design PawPal+ using four core classes:
 
 - Owner
 - Pet
 - Task
 - Scheduler
 
-I also asked how the Scheduler should retrieve tasks across multiple pets rather than only one pet.
+The Scheduler needed to operate across multiple pets.
 
 ### AI Suggestion
 
-AI suggested that:
-
-- Owner should manage multiple Pet objects.
-- Pet should manage its own Task objects.
-- Task should contain care-task information.
-- Scheduler should retrieve all tasks through the Owner.
-
-### Final Decision
-
-I accepted the overall structure.
-
-The final relationship uses:
+AI suggested this relationship:
 
 ```text
 Scheduler -> Owner -> Pets -> Tasks
 ```
 
-This keeps the Scheduler responsible for scheduling while the Owner remains responsible for managing pets.
-
----
-
-## UML and Class Scaffolding
-
-### Prompt / Request
-
-I asked AI to translate the class design into Mermaid UML and Python class skeletons.
-
-### AI Suggestion
-
-AI generated classes with attributes and methods for:
-
-- Owner
-- Pet
-- Task
-- Scheduler
-
-It also suggested using Python dataclasses for Task and Pet.
+Owner manages Pet objects, Pet manages Task objects, and Scheduler retrieves the combined task collection through Owner.
 
 ### Final Decision
 
-I used dataclasses for Task and Pet because they mainly store structured data.
-
-Owner and Scheduler remain regular Python classes because they primarily coordinate other objects and behaviors.
+I accepted this architecture because it keeps scheduling logic separated from pet/task storage and allows algorithms to operate across multiple pets.
 
 ---
 
 ## Scheduler Algorithms
 
-### Prompt / Request
+AI helped develop these scheduling features:
 
-I asked AI for readable implementations of:
+### Chronological Sorting
 
-- Sorting tasks chronologically
-- Filtering tasks
-- Detecting scheduling conflicts
-- Handling recurring tasks
-- Priority-based scheduling
-
-### Sorting
-
-The final implementation uses Python's `sorted()` with task date and time as the key.
-
-### Priority Scheduling
-
-The advanced scheduler uses a priority map:
-
-```text
-high -> 0
-medium -> 1
-low -> 2
+```python
+Scheduler.sort_by_time()
 ```
 
-Tasks are sorted by priority first, followed by due date and time.
+Sorts tasks by due date and time.
 
 ### Filtering
 
-The Scheduler can filter tasks using:
+```python
+Scheduler.filter_tasks()
+```
 
-- Pet name
-- Completion status
+Filters by pet name or completion status.
 
 ### Conflict Detection
 
-The implemented strategy checks whether two tasks have the exact same:
+```python
+Scheduler.detect_conflicts()
+```
 
-- Due date
-- Time
+Detects tasks sharing the same date and time.
 
-If both match, they are reported as a conflict.
+### Recurring Tasks
 
-### Recurrence
+```python
+Scheduler.handle_recurring_task()
+```
 
-Recurring tasks support:
+Creates future occurrences for daily and weekly tasks.
 
-- `daily` → next occurrence is one day later
-- `weekly` → next occurrence is seven days later
-- `once` → no new occurrence
+### Priority Scheduling
 
-Python's `timedelta` is used to calculate the next date.
+```python
+Scheduler.sort_by_priority()
+```
+
+Ranks tasks:
+
+```text
+high -> medium -> low
+```
+
+Tasks with the same priority are sorted by date and time.
+
+### Next Available Slot
+
+```python
+Scheduler.next_available_slot()
+```
+
+Searches across tasks from all pets and finds the next available interval beginning at or after a requested start time.
+
+---
+
+# Agent Workflow
+
+## Task Requested of the Agent
+
+I asked Agent Mode to implement an advanced scheduling capability:
+
+```text
+Add a next_available_slot() method to Scheduler.
+
+Requirements:
+- Work across all pets through Owner.get_all_tasks()
+- Accept a date, start time, and interval in minutes
+- Find the next slot that does not conflict with an existing task
+- Add pytest coverage
+- Add a CLI demonstration
+- Preserve all existing working features
+```
+
+## Files Modified by the Agent
+
+The Agent worked on:
+
+```text
+pawpal_system.py
+main.py
+tests/test_pawpal.py
+```
+
+## What the Agent Completed
+
+The Agent:
+
+1. Added `Scheduler.next_available_slot()`.
+2. Used the Owner's combined task collection so the algorithm works across multiple pets.
+3. Added date/time parsing with Python's `datetime`.
+4. Advanced candidate times using `timedelta`.
+5. Added a CLI demonstration in `main.py`.
+6. Added a pytest case where tasks occupied 09:00 and 09:30 and the next 30-minute slot was correctly returned as 10:00.
+
+## Manual Corrections and Human Intervention
+
+The Agent initially attempted to run pytest using a different system Python environment.
+
+That environment did not contain pytest, so the Agent then attempted to install dependencies globally.
+
+I rejected that action because the project already had an existing `.venv`.
+
+Instead, I kept the code changes and manually verified them from the project's activated virtual environment using:
+
+```bash
+python -m pytest
+python main.py
+```
+
+This was an important example of why Agent actions still require human supervision.
+
+I also ensured that the runtime persistence file `data.json` was excluded from Git rather than committed to the repository.
 
 ---
 
 ## Data Persistence
 
-### Prompt / Request
+### Task
 
-I asked AI to add JSON persistence so PawPal+ could remember pets and tasks between application runs.
+Add persistence so pets and tasks remain available between application runs.
+
+### AI Suggestion
+
+Use JSON serialization through the Owner class.
 
 ### Implementation
 
-The Owner class now provides:
+The following methods were added:
 
 ```python
-save_to_json()
-load_from_json()
+Owner.save_to_json()
+Owner.load_from_json()
 ```
 
-Task dates are converted to ISO-formatted strings when saved and reconstructed as Python `date` objects when loaded.
+Task dates are saved using ISO format and reconstructed using `date.fromisoformat()`.
 
-The Streamlit application automatically loads `data.json` when it starts and saves changes after owner, pet, or task updates.
+The Streamlit app automatically loads `data.json` and saves updates.
 
 ### Verification
 
-I tested persistence by:
+Persistence was verified by:
 
-1. Adding a pet and task in Streamlit.
-2. Stopping the Streamlit server.
-3. Starting the app again.
-4. Confirming that the saved pet and task were still available.
-
-I also added an automated pytest persistence test.
+1. Adding a pet and task.
+2. Closing Streamlit.
+3. Restarting Streamlit.
+4. Confirming the saved data returned.
+5. Running the JSON persistence pytest case.
 
 ---
 
-## Debugging
+## Professional UI Formatting
 
-AI was also used during debugging.
+AI helped improve the Streamlit interface with:
 
-### Indentation Issue
+- Dashboard metrics
+- Tables
+- Emoji indicators
+- Priority indicators
+- Success messages
+- Warning messages
+- Error messages
+- Care summary metrics
 
-While editing `Scheduler`, partial code replacements caused indentation errors.
-
-Example error:
+Streamlit functions used include:
 
 ```text
-IndentationError: unindent does not match any outer indentation level
+st.columns()
+st.metric()
+st.table()
+st.success()
+st.warning()
+st.error()
 ```
 
-To reduce editing mistakes, I changed my workflow and began replacing complete files instead of repeatedly inserting small fragments into existing code.
+These changes improve readability without changing the underlying scheduling logic.
 
-### Import Issue
+---
 
-At one point, `pawpal_system.py` accidentally contained:
+# Prompt Strategy Comparison
 
-```python
-from pawpal_system import Owner, Pet, Task, Scheduler
+## Strategy 1 — Partial Code Edits
+
+**Model / Tool:** ChatGPT
+
+**Prompt / Task:**  
+Provide only the individual method or small code block that needed to change.
+
+### Useful Output
+
+- Short responses
+- Easy to study individual algorithms
+- Useful when a change is isolated
+
+### Problems
+
+- Partial insertions caused indentation errors.
+- Old code sometimes remained in the file.
+- One editing sequence resulted in an incorrect self-import.
+- It was harder to verify the entire file structure.
+
+---
+
+## Strategy 2 — Complete-File Replacement
+
+**Model / Tool:** ChatGPT
+
+**Prompt / Task:**  
+Provide the complete updated file while preserving all existing working functionality.
+
+### Useful Output
+
+- Consistent indentation
+- Easier import verification
+- Easier class-structure verification
+- Lower chance of obsolete code remaining
+- Faster copy/run/test workflow
+
+### Problems
+
+- Longer responses
+- Full files still require human review
+- Manual changes could be overwritten if the replacement is not checked first
+
+---
+
+## Comparison and Final Decision
+
+Both prompting strategies were useful for different purposes.
+
+The incremental strategy was better for understanding isolated concepts.
+
+The complete-file strategy was more reliable for larger structural changes because it reduced integration and indentation errors.
+
+For PawPal+, I ultimately preferred:
+
+```text
+small conceptual change -> targeted prompt
+
+multi-method or structural change -> complete-file prompt
 ```
 
-This caused the file to import itself and produced an ImportError.
+This comparison directly changed my AI-assisted development workflow.
 
-The incorrect import was removed from `pawpal_system.py` and kept only in `main.py`.
+---
 
-### Verification
+## Accepted, Rejected, and Revised AI Suggestions
 
-After fixes, I verified the code with:
+### Accepted
 
-```bash
-python -m py_compile pawpal_system.py
-python main.py
-```
+I accepted:
+
+- The four-class OOP architecture
+- Dataclasses for Task and Pet
+- Scheduler access through Owner
+- pytest-based verification
+- JSON serialization
+- Priority-based scheduling
+- The next-available-slot algorithm
+
+### Revised
+
+I revised the initial partial-edit workflow after it caused indentation and integration problems.
+
+I switched to complete-file replacements for larger changes.
+
+### Rejected
+
+I rejected the Agent's attempt to install project dependencies globally because the project already had an isolated virtual environment.
+
+I instead used the existing `.venv`.
 
 ---
 
 ## Testing
 
-### Prompt / Request
-
-I asked AI to create meaningful pytest tests for the most important PawPal+ behaviors.
-
-### Tests Added
-
-The test suite verifies:
+The final automated test suite verifies:
 
 1. Task completion
-2. Adding a task to a pet
-3. Chronological task sorting
-4. Priority-based scheduling
-5. Daily recurring-task creation
-6. Scheduling conflict detection
-7. JSON data persistence
+2. Adding tasks to pets
+3. Chronological sorting
+4. Priority-based sorting
+5. Recurring tasks
+6. Conflict detection
+7. JSON persistence
+8. Next available slot scheduling
 
-### Verification
-
-I ran:
+Final test command:
 
 ```bash
 python -m pytest
 ```
 
-Final result:
+Passing result:
 
 ```text
-7 passed
+8 passed
 ```
-
----
-
-## Streamlit Integration
-
-AI helped connect the Python backend to the Streamlit interface.
-
-The final UI:
-
-- Stores the Owner object in `st.session_state`
-- Adds multiple pets
-- Adds care tasks
-- Displays the sorted daily schedule
-- Displays a priority-based schedule
-- Shows conflict warnings
-- Uses dashboard metrics and status indicators
-- Saves data to JSON
-- Restores saved data when the application restarts
-
-I manually tested the UI by adding Biscuit and Milo and scheduling tasks at the same time.
-
-The conflict warning appeared correctly.
-
----
-
-## Prompt Strategy Comparison
-
-### Strategy 1 — Incremental / Partial Code Edits
-
-**Model / Tool:** ChatGPT
-
-**Prompting strategy:**  
-Ask AI to provide only the small method or code block that needed to change.
-
-**Task:**  
-Implement individual Scheduler methods such as `sort_by_time()`, `filter_tasks()`, and `detect_conflicts()`.
-
-**What was useful:**
-
-- Responses were short.
-- It was easy to focus on one concept at a time.
-- Individual algorithms were easier to understand.
-
-**Problems:**
-
-- Copying small blocks into an existing class caused indentation mistakes.
-- Some old code remained in the file.
-- One edit resulted in an incorrect self-import.
-- Debugging took additional time because the full file structure was not always visible.
-
-### Strategy 2 — Complete-File Replacement
-
-**Model / Tool:** ChatGPT
-
-**Prompting strategy:**  
-Provide the entire updated file whenever a significant change is required.
-
-**Task:**  
-Repair and extend `pawpal_system.py`, `main.py`, `app.py`, and the test suite while preserving the complete file structure.
-
-**What was useful:**
-
-- Indentation was much more consistent.
-- Imports and class relationships were easier to verify.
-- It reduced the chance of leaving obsolete code behind.
-- It was faster to copy, save, run, and test.
-- The full context made later changes easier to reason about.
-
-**Problems:**
-
-- Responses were longer.
-- I still had to review the entire file before replacing my existing code.
-- A full-file replacement can overwrite manual changes if it is used carelessly.
-
-### Final Decision
-
-For PawPal+, I preferred the **complete-file replacement strategy** for larger structural changes because it reduced integration errors and made verification faster.
-
-For very small changes, an incremental edit can still be useful, but only when the exact insertion point is clear.
-
-This comparison changed how I worked with AI during the project. Instead of treating generated code as isolated snippets, I began considering how each suggestion fit into the complete application.
-
----
-
-## Human Judgment
-
-I did not accept every AI suggestion blindly.
-
-One important change to my workflow happened after partial code edits repeatedly caused indentation and file-structure problems.
-
-Instead of continuing to patch individual methods, I chose to use complete-file replacements and verify each change before moving forward.
-
-I also used automated tests, CLI execution, compilation checks, and manual Streamlit testing to determine whether AI-generated code actually worked.
 
 ---
 
 ## Verification Methods
 
-I used the following checks during development:
+I used:
 
 ```bash
 python -m py_compile pawpal_system.py
@@ -346,14 +366,20 @@ python -m pytest
 streamlit run app.py
 ```
 
-These checks helped verify syntax, backend behavior, automated tests, persistence, and UI integration.
+These checks verified:
+
+- Syntax
+- OOP behavior
+- Scheduling algorithms
+- Persistence
+- CLI behavior
+- Streamlit integration
+- Automated tests
 
 ---
 
 ## Key Takeaway
 
-AI was most useful for quickly generating designs, implementation ideas, tests, and debugging suggestions.
+AI accelerated design, implementation, debugging, and testing, but it did not replace engineering judgment.
 
-However, the project still required human decisions about architecture, correctness, readability, and whether AI-generated changes matched the project requirements.
-
-My role was to use AI as an engineering assistant while remaining responsible for the final system.
+The Agent environment issue demonstrated that even when AI-generated code is useful, I still need to evaluate proposed commands, preserve the correct development environment, test the result, and decide which changes should be accepted.

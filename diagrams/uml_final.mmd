@@ -5,6 +5,8 @@ class Owner {
     +list pets
     +add_pet(pet)
     +get_all_tasks()
+    +save_to_json(file_path)
+    +load_from_json(file_path)
 }
 
 class Pet {
@@ -29,8 +31,10 @@ class Scheduler {
     +Owner owner
     +get_all_tasks()
     +sort_by_time()
+    +sort_by_priority()
     +filter_tasks(pet_name, completed)
     +detect_conflicts()
+    +next_available_slot(target_date, start_time, interval_minutes)
     +handle_recurring_task(pet, task)
 }
 
