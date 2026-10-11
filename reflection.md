@@ -2,10 +2,18 @@
 
 ## 1. System Design
 
-**a. Initial design**
+### Core user actions
+1. Add and manage pets under an owner.
+2. Add care tasks such as feeding, walks, medication, and appointments.
+3. View an organized daily schedule across all pets, including conflicts and recurring tasks.
 
-- Briefly describe your initial UML design.
-- What classes did you include, and what responsibilities did you assign to each?
+### Initial class design
+- **Owner**: Stores owner information and manages multiple pets. It can add pets and retrieve tasks across all pets.
+- **Pet**: Stores pet information and manages that pet's tasks.
+- **Task**: Represents one care activity with a description, time, frequency, priority, and completion status.
+- **Scheduler**: Organizes tasks across all pets. It will sort tasks, filter them, detect scheduling conflicts, and handle recurring tasks.
+
+The relationships are: an Owner has multiple Pets, each Pet has multiple Tasks, and the Scheduler works with the Owner to organize tasks across all pets.
 
 **b. Design changes**
 
