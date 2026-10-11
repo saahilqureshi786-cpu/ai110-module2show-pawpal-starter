@@ -8,11 +8,11 @@ from pawpal_system import Owner, Pet, Task, Scheduler
 st.set_page_config(
     page_title="PawPal+",
     page_icon="🐾",
-    layout="centered",
+    layout="wide",
 )
 
 st.title("🐾 PawPal+")
-st.write("Smart pet-care scheduling for multiple pets.")
+st.caption("Smart pet-care scheduling for multiple pets")
 
 
 # ---------------------------------------------------------
@@ -27,6 +27,25 @@ scheduler = Scheduler(owner)
 
 
 # ---------------------------------------------------------
+# Dashboard
+# ---------------------------------------------------------
+
+all_tasks = owner.get_all_tasks()
+
+total_tasks = len(all_tasks)
+completed_tasks = sum(
+    1 for _, task in all_tasks if task.completed
+)
+conflict_count = len(scheduler.detect_conflicts())
+
+col1, col2, col3 = st.columns(3)
+
+col1.metric("🐾 Pets", len(owner.pets))
+col2.metric("📋 Tasks", total_tasks)
+col3.metric("⚠️ Conflicts", conflict_count)
+
+
+# ---------------------------------------------------------
 # Owner
 # ---------------------------------------------------------
 
@@ -37,12 +56,12 @@ owner_name = st.text_input(
     value=owner.name,
 )
 
-if st.button("Save owner"):
+if st.button("💾 Save owner"):
     if owner_name.strip():
         owner.name = owner_name.strip()
-        st.success("Owner saved.")
+        st.success("✅ Owner saved.")
     else:
-        st.error("Owner name cannot be empty.")
+        st.error("❌ Owner name cannot be empty.")
 
 
 # ---------------------------------------------------------
@@ -59,17 +78,21 @@ with st.form("add_pet_form"):
         ["Dog", "Cat", "Other"],
     )
 
-    add_pet = st.form_submit_button("Add pet")
+    add_pet = st.form_submit_button(
+        "➕ Add pet"
+    )
 
 if add_pet:
     if not pet_name.strip():
-        st.error("Pet name cannot be empty.")
+        st.error("❌ Pet name cannot be empty.")
 
     elif any(
         pet.name.lower() == pet_name.strip().lower()
         for pet in owner.pets
     ):
-        st.error("A pet with that name already exists.")
+        st.error(
+            "❌ A pet with that name already exists."
+        )
 
     else:
         owner.add_pet(
@@ -79,19 +102,29 @@ if add_pet:
             )
         )
 
-        st.success(f"{pet_name.strip()} added.")
+        st.success(
+            f"✅ {pet_name.strip()} added."
+        )
 
 
 if owner.pets:
     st.subheader("Current Pets")
 
+    pet_rows = []
+
     for pet in owner.pets:
-        st.write(
-            f"🐾 **{pet.name}** — {pet.species}"
+        pet_rows.append(
+            {
+                "Pet": f"🐾 {pet.name}",
+                "Species": pet.species,
+                "Tasks": len(pet.tasks),
+            }
         )
 
+    st.table(pet_rows)
+
 else:
-    st.info("No pets added yet.")
+    st.info("ℹ️ No pets added yet.")
 
 
 # ---------------------------------------------------------
@@ -134,19 +167,17 @@ if owner.pets:
         )
 
         add_task = st.form_submit_button(
-            "Add task"
+            "➕ Add task"
         )
 
     if add_task:
 
         if not description.strip():
-
             st.error(
-                "Task description cannot be empty."
+                "❌ Task description cannot be empty."
             )
 
         else:
-
             selected_pet = next(
                 pet
                 for pet in owner.pets
@@ -164,18 +195,18 @@ if owner.pets:
             selected_pet.add_task(new_task)
 
             st.success(
-                f"Task added for {selected_pet.name}."
+                f"✅ Task added for "
+                f"{selected_pet.name}."
             )
 
 else:
-
     st.info(
-        "Add a pet before creating tasks."
+        "ℹ️ Add a pet before creating tasks."
     )
 
 
 # ---------------------------------------------------------
-# Schedule
+# Today's schedule
 # ---------------------------------------------------------
 
 st.header("📅 Today's Schedule")
@@ -188,29 +219,52 @@ today_tasks = [
     if task.due_date == date.today()
 ]
 
+priority_icons = {
+    "high": "🔴 High",
+    "medium": "🟡 Medium",
+    "low": "🟢 Low",
+}
+
+frequency_icons = {
+    "once": "1️⃣ Once",
+    "daily": "🔁 Daily",
+    "weekly": "📆 Weekly",
+}
+
 if today_tasks:
 
     schedule_rows = []
 
     for pet, task in today_tasks:
 
+        status = (
+            "✅ Complete"
+            if task.completed
+            else "⏳ Pending"
+        )
+
         schedule_rows.append(
             {
                 "Time": task.time,
-                "Pet": pet.name,
+                "Pet": f"🐾 {pet.name}",
                 "Task": task.description,
-                "Priority": task.priority,
-                "Frequency": task.frequency,
-                "Completed": task.completed,
+                "Priority": priority_icons.get(
+                    task.priority.lower(),
+                    task.priority,
+                ),
+                "Frequency": frequency_icons.get(
+                    task.frequency.lower(),
+                    task.frequency,
+                ),
+                "Status": status,
             }
         )
 
     st.table(schedule_rows)
 
 else:
-
     st.info(
-        "No tasks scheduled for today."
+        "ℹ️ No tasks scheduled for today."
     )
 
 
@@ -224,18 +278,53 @@ conflicts = scheduler.detect_conflicts()
 
 if conflicts:
 
+    st.error(
+        f"🚨 {len(conflicts)} scheduling "
+        f"conflict(s) detected."
+    )
+
     for pet1, task1, pet2, task2 in conflicts:
 
         st.warning(
+            f"⚠️ **{task1.time}** — "
             f"{pet1.name}'s '{task1.description}' "
-            f"and {pet2.name}'s '{task2.description}' "
-            f"are both scheduled at {task1.time}."
+            f"conflicts with "
+            f"{pet2.name}'s '{task2.description}'."
         )
 
 else:
-
     st.success(
-        "No scheduling conflicts detected."
+        "✅ No scheduling conflicts detected."
+    )
+
+
+# ---------------------------------------------------------
+# Summary
+# ---------------------------------------------------------
+
+st.header("📊 Care Summary")
+
+if total_tasks > 0:
+
+    pending_tasks = (
+        total_tasks - completed_tasks
+    )
+
+    summary_col1, summary_col2 = st.columns(2)
+
+    summary_col1.metric(
+        "✅ Completed",
+        completed_tasks,
+    )
+
+    summary_col2.metric(
+        "⏳ Pending",
+        pending_tasks,
+    )
+
+else:
+    st.info(
+        "ℹ️ Add some tasks to view a care summary."
     )
 
 
@@ -245,7 +334,7 @@ else:
 
 st.divider()
 
-if st.button("Reset PawPal+"):
+if st.button("🗑️ Reset PawPal+"):
 
     st.session_state.owner = Owner(
         "Pet Owner"
