@@ -289,6 +289,59 @@ def test_conflict_detection():
     )
 
 
+def test_next_available_slot():
+    owner = Owner("Saahil")
+
+    dog = Pet(
+        "Biscuit",
+        "Dog",
+    )
+
+    cat = Pet(
+        "Milo",
+        "Cat",
+    )
+
+    owner.add_pet(dog)
+    owner.add_pet(cat)
+
+    today = date(
+        2026,
+        10,
+        11,
+    )
+
+    dog.add_task(
+        Task(
+            "Breakfast",
+            "09:00",
+            due_date=today,
+        )
+    )
+
+    cat.add_task(
+        Task(
+            "Feeding",
+            "09:30",
+            due_date=today,
+        )
+    )
+
+    scheduler = Scheduler(
+        owner
+    )
+
+    next_slot = (
+        scheduler.next_available_slot(
+            today,
+            "09:00",
+            30,
+        )
+    )
+
+    assert next_slot == "10:00"
+
+
 def test_json_persistence(tmp_path):
     file_path = (
         tmp_path

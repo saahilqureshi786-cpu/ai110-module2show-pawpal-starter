@@ -138,3 +138,17 @@ if next_walk:
         f"Next occurrence: {next_walk.description} "
         f"on {next_walk.due_date}"
     )
+
+print("\nNext Available Slot Demo")
+print("------------------------")
+
+slot = scheduler.next_available_slot(
+    today,
+    "09:00",
+    30,
+)
+
+print(
+    f"Next free 30-minute slot starting at "
+    f"{slot} on {today}"
+)

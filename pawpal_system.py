@@ -1,6 +1,6 @@
 import json
 from dataclasses import dataclass, field
-from datetime import date, timedelta
+from datetime import date, datetime, timedelta
 
 
 @dataclass
@@ -192,6 +192,40 @@ class Scheduler:
                     )
 
         return conflicts
+
+    def next_available_slot(self, target_date, start_time, interval_minutes):
+        """Return the next free time slot on the given date."""
+        if interval_minutes <= 0:
+            raise ValueError("interval_minutes must be greater than 0")
+
+        candidate = datetime.strptime(
+            f"{target_date.isoformat()} {start_time}",
+            "%Y-%m-%d %H:%M",
+        )
+
+        while candidate.date() == target_date:
+            slot_end = candidate + timedelta(minutes=interval_minutes)
+            conflict = False
+
+            for pet, task in self.owner.get_all_tasks():
+                if task.due_date != target_date:
+                    continue
+
+                task_start = datetime.strptime(
+                    f"{task.due_date.isoformat()} {task.time}",
+                    "%Y-%m-%d %H:%M",
+                )
+
+                if task_start >= candidate and task_start < slot_end:
+                    conflict = True
+                    break
+
+            if not conflict:
+                return candidate.strftime("%H:%M")
+
+            candidate += timedelta(minutes=interval_minutes)
+
+        return None
 
     def handle_recurring_task(self, pet, task):
         """Complete a task and create its next recurring occurrence."""
