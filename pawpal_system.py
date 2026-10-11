@@ -1,4 +1,5 @@
 from dataclasses import dataclass, field
+from datetime import date, timedelta
 
 
 @dataclass
@@ -8,6 +9,7 @@ class Task:
     frequency: str = "once"
     priority: str = "medium"
     completed: bool = False
+    due_date: date = field(default_factory=date.today)
 
     def mark_complete(self):
         """Mark this task as completed."""
@@ -58,10 +60,13 @@ class Scheduler:
         return self.owner.get_all_tasks()
 
     def sort_by_time(self):
-        """Return tasks sorted by time."""
+        """Return tasks sorted by date and time."""
         return sorted(
             self.owner.get_all_tasks(),
-            key=lambda item: item[1].time,
+            key=lambda item: (
+                item[1].due_date,
+                item[1].time,
+            ),
         )
 
     def filter_tasks(self, pet_name=None, completed=None):
@@ -85,7 +90,7 @@ class Scheduler:
         return tasks
 
     def detect_conflicts(self):
-        """Return tasks that share the same scheduled time."""
+        """Return tasks scheduled for the same date and time."""
         tasks = self.owner.get_all_tasks()
         conflicts = []
 
@@ -94,13 +99,37 @@ class Scheduler:
                 pet1, task1 = tasks[i]
                 pet2, task2 = tasks[j]
 
-                if task1.time == task2.time:
+                same_date = task1.due_date == task2.due_date
+                same_time = task1.time == task2.time
+
+                if same_date and same_time:
                     conflicts.append(
                         (pet1, task1, pet2, task2)
                     )
 
         return conflicts
 
-    def handle_recurring_task(self):
-        """Recurring-task logic will be added next."""
-        pass
+    def handle_recurring_task(self, pet, task):
+        """Complete a task and create its next recurring occurrence."""
+        task.mark_complete()
+
+        frequency = task.frequency.lower()
+
+        if frequency == "daily":
+            next_date = task.due_date + timedelta(days=1)
+        elif frequency == "weekly":
+            next_date = task.due_date + timedelta(days=7)
+        else:
+            return None
+
+        next_task = Task(
+            description=task.description,
+            time=task.time,
+            frequency=task.frequency,
+            priority=task.priority,
+            completed=False,
+            due_date=next_date,
+        )
+
+        pet.add_task(next_task)
+        return next_task

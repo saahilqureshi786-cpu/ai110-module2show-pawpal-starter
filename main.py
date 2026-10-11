@@ -1,3 +1,5 @@
+from datetime import date
+
 from pawpal_system import Owner, Pet, Task, Scheduler
 
 
@@ -9,20 +11,46 @@ milo = Pet("Milo", "Cat")
 owner.add_pet(biscuit)
 owner.add_pet(milo)
 
+today = date.today()
+
 biscuit.add_task(
-    Task("Morning walk", "08:00", "daily", "high")
+    Task(
+        "Morning walk",
+        "08:00",
+        "daily",
+        "high",
+        due_date=today,
+    )
 )
 
 biscuit.add_task(
-    Task("Breakfast", "09:00", "daily", "high")
+    Task(
+        "Breakfast",
+        "09:00",
+        "daily",
+        "high",
+        due_date=today,
+    )
 )
 
 milo.add_task(
-    Task("Medication", "10:00", "daily", "medium")
+    Task(
+        "Medication",
+        "10:00",
+        "daily",
+        "medium",
+        due_date=today,
+    )
 )
 
 milo.add_task(
-    Task("Feeding", "09:00", "daily", "high")
+    Task(
+        "Feeding",
+        "09:00",
+        "daily",
+        "high",
+        due_date=today,
+    )
 )
 
 scheduler = Scheduler(owner)
@@ -32,10 +60,11 @@ print("Today's Schedule")
 print("----------------")
 
 for pet, task in scheduler.sort_by_time():
-    print(
-        f"{task.time} — {pet.name}: "
-        f"{task.description} [{task.priority}]"
-    )
+    if task.due_date == today:
+        print(
+            f"{task.time} — {pet.name}: "
+            f"{task.description} [{task.priority}]"
+        )
 
 
 print("\nBiscuit's Tasks")
@@ -44,7 +73,10 @@ print("----------------")
 for pet, task in scheduler.filter_tasks(
     pet_name="Biscuit"
 ):
-    print(f"{task.time} — {task.description}")
+    print(
+        f"{task.due_date} {task.time} — "
+        f"{task.description}"
+    )
 
 
 print("\nSchedule Conflicts")
@@ -62,3 +94,25 @@ if conflicts:
         )
 else:
     print("No conflicts found.")
+
+
+print("\nRecurring Task Demo")
+print("-------------------")
+
+morning_walk = biscuit.tasks[0]
+
+next_walk = scheduler.handle_recurring_task(
+    biscuit,
+    morning_walk,
+)
+
+print(
+    f"Completed: {morning_walk.description} "
+    f"on {morning_walk.due_date}"
+)
+
+if next_walk:
+    print(
+        f"Next occurrence: {next_walk.description} "
+        f"on {next_walk.due_date}"
+    )
